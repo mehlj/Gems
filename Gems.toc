@@ -1,0 +1,8 @@
+## Interface: 11302
+## Title: Gems
+## Notes: Everquest style gems
+## Author: bowkkake
+## Version: 1.0
+
+Gems.lua
+#Gems.xml
