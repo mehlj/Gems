@@ -6,6 +6,37 @@ local score = 0
 local isPushable = {}
 local tileCount = {}
 
+local tileMap_horiz1 = {
+    [1] = 0,
+    [2] = 65,
+    [3] = 130,
+    [4] = 195,
+    [5] = 260,
+    [6] = 325,
+    [7] = 390,
+    [8] = 455,
+    [9] = 520,
+    [10] = 585,
+    [11] = 650,
+    [12] = 715
+}
+
+local tileMap_vert1 = {
+    [1] = 0,
+    [2] = -66,
+    [3] = -132,
+    [4] = -198,
+    [5] = -264,
+    [6] = -330,
+    [7] = -396,
+    [8] = -462,
+    [9] = -528,
+    [10] = -594,
+    [11] = -660,
+    [12] = -726,
+    [13] = -792,
+}
+
 local tileMap_horiz = {
     ["1_1"] = 0,
     ["1_2"] = 65,
@@ -326,17 +357,20 @@ local tileMap_vert = {
 
 
 
--- TODO------------
---- make tilemap (huge step)
---- randomize starting position of texture
---- make texture move down every 2 seconds, then stop at bottom
+-- TODO------------        
 --- make keys interact with position of texture
+    -- note: done, but the loop in newgame() resets the position every time. need fix
+    -- also, set limits on x coords (they can go out of bounds now)
+-- allow textures to stack on one another
+--- randomize texture that spawns
+
+-- note: bug, pressing start a bunch of times keeps speeding textures up (should reset speed)
 
 
 
 -- make frame
 Gems.frame = CreateFrame("Frame", "Gems_Frame", UIParent, "BasicFrameTemplateWithInset")
-Gems.frame:SetSize(700, 560) -- width, height
+Gems.frame:SetSize(700, 540) -- width, height
 Gems.frame:SetPoint("CENTER") 
 Gems.frame:Hide()
     
@@ -347,8 +381,8 @@ Gems.frame:SetScript("OnDragStart", Gems.frame.StartMoving)
 Gems.frame:SetScript("OnDragStop", Gems.frame.StopMovingOrSizing)
 
 Gems.frame:SetScript("OnKeyDown", function (self, key)
-    print(key)
-    if (key == "UP") or (key == "DOWN") or (key == "LEFT") or (key == "RIGHT") then
+    print(key) 
+    if (key == "DOWN") or (key == "LEFT") or (key == "RIGHT") then
         Gems[key]()
     end
 end)
@@ -366,6 +400,7 @@ Gems.frame.doneButton:SetText("Done")
 Gems.frame.doneButton:SetNormalFontObject("GameFontNormalLarge")
 Gems.frame.doneButton:SetHighlightFontObject("GameFontHighlightLarge")
 Gems.frame.doneButton:SetScript("OnClick", function ( ... )
+    Gems:clear()
     Gems.frame:Hide()
 end)
 
@@ -380,32 +415,82 @@ Gems.frame.startButton:SetScript("OnClick", function ( ... )
     Gems:newGame()
 end)
 
+-- score frame
 Gems.scoreFrame = CreateFrame("Frame", "Gems_Score", Gems.frame, "ThinBorderTemplate")
-Gems.scoreFrame:SetSize(220,530) -- width, height
+Gems.scoreFrame:SetSize(220,517) -- width, height
 Gems.scoreFrame:SetPoint("RIGHT", -5, -10) 
 
+-- game frame
 Gems.gameFrame = CreateFrame("Frame", "Gems_Game", Gems.frame, "ThinBorderTemplate")
-Gems.gameFrame:SetSize(470,530) -- width, height
+Gems.gameFrame:SetSize(470,517) -- width, height
 Gems.gameFrame:SetPoint("LEFT", 3, -10) 
-
+Gems.gameFrame.texture = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
 
 function Gems:newGame()
     -- todo: reset score to zero
-    local tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
-    tex:SetTexture("Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot")
-    tex:SetScale(0.6)
-    tex:SetPoint("TOPLEFT", tileMap_horiz["1_1"], tileMap_vert["1_1"])
 
-    local tex2 = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
-    tex2:SetTexture("Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot")
-    tex2:SetScale(0.6)
-    tex2:SetPoint("TOPLEFT", tileMap_horiz["1_12"], tileMap_vert["1_12"])
+    -- reset board
+    self:clear()
 
-    local tex3 = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
-    tex3:SetTexture("Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot")
-    tex3:SetScale(0.6)
-    tex3:SetPoint("TOPLEFT", tileMap_horiz["13_12"], tileMap_vert["13_12"])
+
+    Gems.gameFrame.texture:SetTexture("Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot")
+    Gems.gameFrame.texture:SetScale(0.6)
+
+    start_point = tileMap_horiz1[math.random(#tileMap_horiz1)]
+    Gems.gameFrame.texture:SetPoint("TOPLEFT", start_point, tileMap_vert["1_1"])
+
+
+    local myFunc
+    x = 1
+    function myFunc()
+        Gems.gameFrame.texture:SetPoint("TOPLEFT", start_point, tileMap_vert1[x])
+        x = x+1
+        point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint()
+
+        print(yOfs)
+        if yOfs == -792
+        then
+            print("at bottom")
+            return
+        else
+            print("looping again")
+            print(x)
+            C_Timer.After(0.7, myFunc) --repeat in 1 sec
+        end
+    end
+
+    myFunc()
+
+
+    --local tex3 = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
+    --tex3:SetTexture("Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot")
+    --tex3:SetScale(0.6)
+    --tex3:SetPoint("TOPLEFT", tileMap_horiz["13_12"], tileMap_vert["13_12"])
+end
+
+
+function Gems:clear()
+    Gems.gameFrame.texture:SetTexture(nil)
+end
+
+-- key interaction functions
+function Gems:LEFT()
+    point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint()
+
+    Gems.gameFrame.texture:SetPoint("TOPLEFT", xOfs - 65, yOfs)
+end
+
+function Gems:RIGHT()
+    point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint()
+
+    Gems.gameFrame.texture:SetPoint("TOPLEFT", xOfs + 65, yOfs)
+end
+
+function Gems:DOWN()
+    point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint()
+
+    Gems.gameFrame.texture:SetPoint("TOPLEFT", xOfs, yOfs - 66)
 end
 
 -- Slash Commands
