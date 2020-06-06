@@ -359,7 +359,6 @@ local tileMap_vert = {
 
 -- TODO------------        
 --- make keys interact with position of texture
-    -- note: done, but the loop in newgame() resets the position every time. need fix
     -- also, set limits on x coords (they can go out of bounds now)
 -- allow textures to stack on one another
 --- randomize texture that spawns
@@ -444,12 +443,16 @@ function Gems:newGame()
     local myFunc
     x = 1
     function myFunc()
-        Gems.gameFrame.texture:SetPoint("TOPLEFT", start_point, tileMap_vert1[x])
-        x = x+1
-        point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint()
+        before_point, before_relativeTo, before_relativePoint, before_xOfs, before_yOfs = Gems.gameFrame.texture:GetPoint()
 
-        print(yOfs)
-        if yOfs == -792
+        Gems.gameFrame.texture:SetPoint("TOPLEFT", before_xOfs, tileMap_vert1[x])
+        x = x+1
+
+        after_point, after_relativeTo, after_relativePoint, after_xOfs, after_yOfs = Gems.gameFrame.texture:GetPoint()
+
+        -- if y is > something or < something, do not let more key presses occur
+
+        if after_yOfs == -792
         then
             print("at bottom")
             return
@@ -461,12 +464,6 @@ function Gems:newGame()
     end
 
     myFunc()
-
-
-    --local tex3 = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
-    --tex3:SetTexture("Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot")
-    --tex3:SetScale(0.6)
-    --tex3:SetPoint("TOPLEFT", tileMap_horiz["13_12"], tileMap_vert["13_12"])
 end
 
 
