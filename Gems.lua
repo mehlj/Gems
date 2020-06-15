@@ -360,6 +360,7 @@ local tileMap_vert = {
 -- TODO------------        
 --- make keys interact with position of texture
     -- also, set limits on x coords (they can go out of bounds now)
+    -- down arrow doesn't work (it resets)
 -- allow textures to stack on one another
 --- randomize texture that spawns
 
