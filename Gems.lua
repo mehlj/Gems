@@ -150,15 +150,26 @@ Gems.gameFrame:SetSize(470,517) -- width, height
 Gems.gameFrame:SetPoint("LEFT", 3, -10) 
 Gems.gameFrame.texture = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
+-- bottom texture
+bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
 function Gems:gen_icon()
     -- place ability tooltip on grid
-    texture = textures[ math.random( #textures ) ]
-    Gems.gameFrame.texture:SetTexture(texture)
+    texture_name = textures[ math.random( #textures ) ]
+    Gems.gameFrame.texture:SetTexture(texture_name)
     Gems.gameFrame.texture:SetScale(0.6)
+end
 
-    start_point = tileMap_horiz1[math.random(#tileMap_horiz1)]
-    Gems.gameFrame.texture:SetPoint("TOPLEFT", start_point, tileMap_vert1[1])
+function Gems:leave_at_bottom()
+    -- create texture
+    bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
+    texture_name = Gems.gameFrame.texture:GetTexture()
+    bottom_tex:SetTexture(texture_name)
+    bottom_tex:SetScale(0.6)
+    
+    -- set position
+    before_point, before_relativeTo, before_relativePoint, before_xOfs, before_yOfs = Gems.gameFrame.texture:GetPoint()
+    bottom_tex:SetPoint("TOPLEFT", before_xOfs, before_yOfs)
 end
 
 function Gems:newGame()
@@ -168,38 +179,56 @@ function Gems:newGame()
     self:clear()
 
     Gems:gen_icon()
+    start_point = tileMap_horiz1[math.random(#tileMap_horiz1)]
+    Gems.gameFrame.texture:SetPoint("TOPLEFT", start_point, tileMap_vert1[1])
    
     local gameLoop
     x = 1
     loop_count = 0
     
-
     -- current issues:
-    -- delay at top + icon doesn't get to bottom (same issue)
-    -- the texture gets removed, it should stay there
+    -- after texture check, it does not continue loop
+    -- also, it only checks the last texture, not every texture
     function gameLoop()
+
+        if x == 1 then
+            Gems:gen_icon()
+            start_point = tileMap_horiz1[math.random(#tileMap_horiz1)]
+            Gems.gameFrame.texture:SetPoint("TOPLEFT", start_point, tileMap_vert1[1])
+        end
+    
+        
         before_point, before_relativeTo, before_relativePoint, before_xOfs, before_yOfs = Gems.gameFrame.texture:GetPoint()
         
-        Gems.gameFrame.texture:SetPoint("TOPLEFT", before_xOfs, tileMap_vert1[x])
-        x = x+1
 
-        after_point, after_relativeTo, after_relativePoint, after_xOfs, after_yOfs = Gems.gameFrame.texture:GetPoint()    
+        -- check if texture is below us
+        bottomtex_point, bottomtex_relativeTo, bottomtex_relativePoint, bottomtex_xOfs, bottomtex_yOfs = bottom_tex:GetPoint()
+        if (before_yOfs <= -726 and bottomtex_yOfs == -792) and bottomtex_xOfs == before_xOfs
+        then
+            print("texture is below us!") -- problem is here?
+        else
+            Gems.gameFrame.texture:SetPoint("TOPLEFT", before_xOfs, tileMap_vert1[x])
+            x = x+1
+    
+            after_point, after_relativeTo, after_relativePoint, after_xOfs, after_yOfs = Gems.gameFrame.texture:GetPoint()
+        end
 
         if after_yOfs == -792
         then
             print("at bottom")
+            Gems:leave_at_bottom()
             x = 1
             loop_count = loop_count+1
             print("loop counter: ", loop_count)
 
             if loop_count < 3 then
-                --Gems:gen_icon() -- problem is here, icon doesn't get to bottom
                 C_Timer.After(0.7, gameLoop)
             end
         
             return 
         else
             print("number of inside loops: ", x)
+
             C_Timer.After(0.7, gameLoop) --repeat in 1 sec
        end        
     end
@@ -211,32 +240,8 @@ end
 
 
 
---while game_isrunning ~= false do
---    counter = counter + 1
---    print("number of loops: ", counter)  
-
-
-
---    point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint() 
---    while yOfs > grid_bottom do
-        -- wait 0.5 seconds, then move tooltip downwards slightly
-        -- once y coord reaches bottom of grid (-792), then the loop ends
-        -- print(Gems__wait(2.5,dropTooltip,xOfs,yOfs)) -- bug is here, crashes the game
---        Gems__wait(2.5,print_hi)
---       dropTooltip(xOfs, yOfs)
---        point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint() -- update for loop
---        print("update in loop: ")
---    end
-
-
-
-
-
-
-
-
 function Gems:clear()
-    Gems.gameFrame.texture:SetTexture(nil)
+    Gems.gameFrame.texture:SetTexture(nil) -- needs fixing
 end
 
 -- key interaction functions
