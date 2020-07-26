@@ -1,10 +1,41 @@
-require "Grid"
-
 local NAME, db = ...
 Gems = db
 
+local moves = false
 local score = 0
+local isPushable = {}
+local tileCount = {}
 
+local tileMap_horiz1 = {
+    [1] = 0,
+    [2] = 65,
+    [3] = 130,
+    [4] = 195,
+    [5] = 260,
+    [6] = 325,
+    [7] = 390,
+    [8] = 455,
+    [9] = 520,
+    [10] = 585,
+    [11] = 650,
+    [12] = 715
+}
+
+local tileMap_vert1 = {
+    [1] = 0,
+    [2] = -66,
+    [3] = -132,
+    [4] = -198,
+    [5] = -264,
+    [6] = -330,
+    [7] = -396,
+    [8] = -462,
+    [9] = -528,
+    [10] = -594,
+    [11] = -660,
+    [12] = -726,
+    [13] = -792,
+}
 
 local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
                   "Interface\\AddOns\\Gems\\Media\\Ability_GolemStormBolt", 
@@ -13,6 +44,16 @@ local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hibernation",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AspectOfTheMonkey",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hunter_BeastCall"}
+
+
+
+
+
+-- TODO------------        
+
+
+
+-- make three of the same disappear
 
 
 -- make frame
@@ -72,6 +113,8 @@ Gems.gameFrame:SetSize(470,517) -- width, height
 Gems.gameFrame:SetPoint("LEFT", 3, -10) 
 Gems.gameFrame.texture = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
+-- bottom texture
+bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
 function Gems:gen_icon()
     -- place ability tooltip on grid
@@ -80,6 +123,7 @@ function Gems:gen_icon()
     Gems.gameFrame.texture:SetScale(0.6)
 end
 
+-- add bottom_tex 1-10 here, depending on x position
 function Gems:leave_at_bottom()
     -- create texture
     bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
@@ -93,6 +137,9 @@ function Gems:leave_at_bottom()
 end
 
 function Gems:newGame()
+    -- todo: reset score to zero
+
+    -- reset board
     self:clear()
 
     Gems:gen_icon()
@@ -103,6 +150,9 @@ function Gems:newGame()
     x = 1
     loop_count = 0
     
+    -- current issues:
+    -- only checks the last texture, not every texture
+    -- does not remove three in a row
     function gameLoop()
 
         if x == 1 then
