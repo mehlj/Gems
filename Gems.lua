@@ -1,10 +1,13 @@
 local NAME, db = ...
 Gems = db
 
+local moves = false
 local score = 0
+local isPushable = {}
+local tileCount = {}
 
-tileMap_horiz1 = {
-    [1,1] = 0,
+local tileMap_horiz1 = {
+    [1] = 0,
     [2] = 65,
     [3] = 130,
     [4] = 195,
@@ -18,7 +21,7 @@ tileMap_horiz1 = {
     [12] = 715
 }
 
-tileMap_vert1 = {
+local tileMap_vert1 = {
     [1] = 0,
     [2] = -66,
     [3] = -132,
@@ -34,7 +37,6 @@ tileMap_vert1 = {
     [13] = -792,
 }
 
-
 local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
                   "Interface\\AddOns\\Gems\\Media\\Ability_GolemStormBolt", 
                   "Interface\\AddOns\\Gems\\Media\\Ability_GolemThunderClap",
@@ -42,6 +44,16 @@ local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hibernation",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AspectOfTheMonkey",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hunter_BeastCall"}
+
+
+
+
+
+-- TODO------------        
+
+
+
+-- make three of the same disappear
 
 
 -- make frame
@@ -101,6 +113,8 @@ Gems.gameFrame:SetSize(470,517) -- width, height
 Gems.gameFrame:SetPoint("LEFT", 3, -10) 
 Gems.gameFrame.texture = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
+-- bottom texture
+bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
 function Gems:gen_icon()
     -- place ability tooltip on grid
@@ -109,6 +123,7 @@ function Gems:gen_icon()
     Gems.gameFrame.texture:SetScale(0.6)
 end
 
+-- add bottom_tex 1-10 here, depending on x position
 function Gems:leave_at_bottom()
     -- create texture
     bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
@@ -122,6 +137,9 @@ function Gems:leave_at_bottom()
 end
 
 function Gems:newGame()
+    -- todo: reset score to zero
+
+    -- reset board
     self:clear()
 
     Gems:gen_icon()
@@ -132,6 +150,9 @@ function Gems:newGame()
     x = 1
     loop_count = 0
     
+    -- current issues:
+    -- only checks the last texture, not every texture
+    -- does not remove three in a row
     function gameLoop()
 
         if x == 1 then
@@ -143,21 +164,10 @@ function Gems:newGame()
         
         before_point, before_relativeTo, before_relativePoint, before_xOfs, before_yOfs = Gems.gameFrame.texture:GetPoint()
         
-        -- check if texture is below us
-        bottomtex1_point, bottomtex1_relativeTo, bottomtex1_relativePoint, bottomtex1_xOfs, bottomtex1_yOfs = bottom_tex1:GetPoint()
-        bottomtex2_point, bottomtex2_relativeTo, bottomtex2_relativePoint, bottomtex2_xOfs, bottomtex2_yOfs = bottom_tex2:GetPoint()
-        bottomtex3_point, bottomtex3_relativeTo, bottomtex3_relativePoint, bottomtex3_xOfs, bottomtex3_yOfs = bottom_tex3:GetPoint()
-        bottomtex4_point, bottomtex4_relativeTo, bottomtex4_relativePoint, bottomtex4_xOfs, bottomtex4_yOfs = bottom_tex4:GetPoint()
-        bottomtex5_point, bottomtex5_relativeTo, bottomtex5_relativePoint, bottomtex5_xOfs, bottomtex5_yOfs = bottom_tex5:GetPoint()
-        bottomtex6_point, bottomtex6_relativeTo, bottomtex6_relativePoint, bottomtex6_xOfs, bottomtex6_yOfs = bottom_tex6:GetPoint()
-        bottomtex7_point, bottomtex7_relativeTo, bottomtex7_relativePoint, bottomtex7_xOfs, bottomtex7_yOfs = bottom_tex7:GetPoint()
-        bottomtex8_point, bottomtex8_relativeTo, bottomtex8_relativePoint, bottomtex8_xOfs, bottomtex8_yOfs = bottom_tex8:GetPoint()
-        bottomtex9_point, bottomtex9_relativeTo, bottomtex9_relativePoint, bottomtex9_xOfs, bottomtex9_yOfs = bottom_tex9:GetPoint()
-        bottomtex10_point, bottomtex10_relativeTo, bottomtex10_relativePoint, bottomtex10_xOfs, bottomtex10_yOfs = bottom_tex10:GetPoint()
-        bottomtex11_point, bottomtex11_relativeTo, bottomtex11_relativePoint, bottomtex11_xOfs, bottomtex11_yOfs = bottom_tex11:GetPoint()
-        bottomtex12_point, bottomtex12_relativeTo, bottomtex12_relativePoint, bottomtex12_xOfs, bottomtex12_yOfs = bottom_tex12:GetPoint()
-        bottomtex13_point, bottomtex13_relativeTo, bottomtex13_relativePoint, bottomtex13_xOfs, bottomtex13_yOfs = bottom_tex13:GetPoint()
 
+        -- check if texture is below us
+        -- todo: add all 13 getpoints
+        bottomtex_point, bottomtex_relativeTo, bottomtex_relativePoint, bottomtex_xOfs, bottomtex_yOfs = bottom_tex:GetPoint()
         print("before_yOfs is: ", before_yOfs)
         print("before_xOfs is: ", before_xOfs)
         print("bottomtex_yOfs is: ", bottomtex_yOfs)
@@ -179,7 +189,7 @@ function Gems:newGame()
         -- below_1 = get
 
 
-        if (before_yOfs <= check_pos and bottomtex1_yOfs ~= nil) and bottomtex1_xOfs == before_xOfs
+        if (before_yOfs <= check_pos and bottomtex_yOfs ~= nil) and bottomtex_xOfs == before_xOfs
         then
             print("texture is below us!") -- problem is here?
             Gems:leave_at_bottom()
@@ -192,176 +202,7 @@ function Gems:newGame()
                 C_Timer.After(0.7, gameLoop)
             end
         
-            return
-        else if (before_yOfs <= check_pos and bottomtex2_yOfs ~= nil) and bottomtex2_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex3_yOfs ~= nil) and bottomtex3_xOfs == before_xOfs
-            then
-                print("texture is below us!") -- problem is here?
-                Gems:leave_at_bottom()
-                x = 1
-                loop_count = loop_count+1
-                print("loop counter: ", loop_count)
-                check_pos = nil
-    
-                if loop_count < 3 then
-                    C_Timer.After(0.7, gameLoop)
-                end
-            
-                return
-        else if (before_yOfs <= check_pos and bottomtex4_yOfs ~= nil) and bottomtex4_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-
-        else if (before_yOfs <= check_pos and bottomtex5_yOfs ~= nil) and bottomtex5_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex6_yOfs ~= nil) and bottomtex6_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex7_yOfs ~= nil) and bottomtex7_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex8_yOfs ~= nil) and bottomtex8_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex9_yOfs ~= nil) and bottomtex9_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex10_yOfs ~= nil) and bottomtex10_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex11_yOfs ~= nil) and bottomtex11_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex12_yOfs ~= nil) and bottomtex12_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
-        else if (before_yOfs <= check_pos and bottomtex13_yOfs ~= nil) and bottomtex13_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
-            check_pos = nil
-
-            if loop_count < 3 then
-                C_Timer.After(0.7, gameLoop)
-            end
-        
-            return
+            return 
         else
             Gems.gameFrame.texture:SetPoint("TOPLEFT", before_xOfs, tileMap_vert1[x])
             x = x+1
