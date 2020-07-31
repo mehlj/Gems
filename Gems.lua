@@ -47,12 +47,33 @@ local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
 
 
 
+-- 2d array of texture names
+texture_names = {}
+for i = 1, 12 do
+    texture_names[i] = {}
+
+    for j = 1, 13 do
+        texture_names[i][j] = ""
+    end
+end
+
+-- 2d array of booleans specifying if a texture exists at that coord
+texture_exists = {}
+for i = 1, 12 do
+    texture_exists[i] = {}
+
+    for j = 1, 13 do
+        texture_exists[i][j] = false
+    end
+end
+
+
+
+
+
 
 
 -- TODO------------        
-
-
-
 -- make three of the same disappear
 
 
@@ -116,6 +137,12 @@ Gems.gameFrame.texture = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 -- bottom texture
 bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
+
+
+function round(n)
+    return n % 1 >= 0.5 and math.ceil(n) or math.floor(n)
+end
+
 function Gems:gen_icon()
     -- place ability tooltip on grid
     texture_name = textures[ math.random( #textures ) ]
@@ -123,22 +150,27 @@ function Gems:gen_icon()
     Gems.gameFrame.texture:SetScale(0.6)
 end
 
--- add bottom_tex 1-10 here, depending on x position
-function Gems:leave_at_bottom()
+function Gems:leave_texture(check_x, check_y)
     -- create texture
     bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
     texture_name = Gems.gameFrame.texture:GetTexture()
     bottom_tex:SetTexture(texture_name)
     bottom_tex:SetScale(0.6)
-    
-    -- set position
+
+    -- find position
     before_point, before_relativeTo, before_relativePoint, before_xOfs, before_yOfs = Gems.gameFrame.texture:GetPoint()
+
+    -- after creating texture, add records in x2 two dimensional arrays for historical record
+    texture_exists[check_x][check_y] = true
+    texture_names[check_x][check_y] = Gems.gameFrame.texture:GetTexture()
+
+    --  set position
     bottom_tex:SetPoint("TOPLEFT", before_xOfs, before_yOfs)
 end
 
-function Gems:newGame()
-    -- todo: reset score to zero
 
+
+function Gems:newGame()
     -- reset board
     self:clear()
 
@@ -151,8 +183,8 @@ function Gems:newGame()
     loop_count = 0
     
     -- current issues:
-    -- only checks the last texture, not every texture
     -- does not remove three in a row
+
     function gameLoop()
 
         if x == 1 then
@@ -163,42 +195,53 @@ function Gems:newGame()
     
         
         before_point, before_relativeTo, before_relativePoint, before_xOfs, before_yOfs = Gems.gameFrame.texture:GetPoint()
-        
 
-        -- check if texture is below us
-        -- todo: add all 13 getpoints
-        bottomtex_point, bottomtex_relativeTo, bottomtex_relativePoint, bottomtex_xOfs, bottomtex_yOfs = bottom_tex:GetPoint()
-        print("before_yOfs is: ", before_yOfs)
-        print("before_xOfs is: ", before_xOfs)
-        print("bottomtex_yOfs is: ", bottomtex_yOfs)
-        print("bottomtex_xOfs is: ", bottomtex_xOfs)
+        check_x = 0
+        check_y = 0
 
-        if bottomtex_yOfs ~= nil
-        then
-            check_pos = bottomtex_yOfs + 66
-        else
-            check_pos = -726
+        for i,x in ipairs(tileMap_horiz1) do 
+            for b,y in ipairs(tileMap_vert1) do
+                if before_xOfs == x and round(before_yOfs) == y then 
+                    check_x = i
+                    check_y = b
+                end
+            end
         end
 
-        print("check_pos is: ", check_pos)
+        -- temp, just print all contents of texture_exists
+        for i = 1, 12 do        
+            for j = 1, 13 do
+                if texture_names[i][j] ~= "" then
+                    print(texture_names[i][j], " at: ", i, ",", j)
+                end
+            end
+        end
 
-        -- if (before_yOfs <= check_pos and bottomtex1_yOfs ~= nil) and bottomtex1_xOfs == before_xOfs
-        -- else if (before_yOfs <= check_pos and bottomtex1_yOfs ~= nil) and bottomtex1_xOfs == before_xOfs
+        -- temp, just print all contents of texture_names
+        for i = 1, 12 do        
+            for j = 1, 13 do
+                if texture_exists[i][j] == true then
+                end
+            end
+        end
 
 
-        -- below_1 = get
+        -- check if texture is below us
+        --       before_x/y is the icon currently moving downwards
 
+        print(texture_exists[check_x][check_y], " at: ", check_x, ",", check_y)
+        if texture_exists[check_x][check_y] == true then
+            -- if x2 below textures == your current texture, then:
+                -- remove your texture, wand the last two textures
+                -- increment score by 50
 
-        if (before_yOfs <= check_pos and bottomtex_yOfs ~= nil) and bottomtex_xOfs == before_xOfs
-        then
-            print("texture is below us!") -- problem is here?
-            Gems:leave_at_bottom()
+            print("texture is below us!") 
+            Gems:leave_texture(check_x, check_y - 1)
             x = 1
             loop_count = loop_count+1
             print("loop counter: ", loop_count)
-            check_pos = nil
 
-            if loop_count < 3 then
+            if loop_count < 4 then
                 C_Timer.After(0.7, gameLoop)
             end
         
@@ -213,20 +256,17 @@ function Gems:newGame()
         if after_yOfs == -792
         then
             print("at bottom")
-            Gems:leave_at_bottom()
+            Gems:leave_texture(check_x, check_y)
             x = 1
             loop_count = loop_count+1
             print("loop counter: ", loop_count)
-            check_pos = nil
 
-            if loop_count < 3 then
+            if loop_count < 4 then
                 C_Timer.After(0.7, gameLoop)
             end
         
             return 
         else
-            print("number of inside loops: ", x)
-
             C_Timer.After(0.7, gameLoop) --repeat in 1 sec
        end        
     end
