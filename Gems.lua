@@ -47,6 +47,7 @@ local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
 
 
 score = 0
+game_speed = 0.7
 
 -- 2d array of texture names
 texture_names = {}
@@ -132,6 +133,19 @@ Gems.scoreFrame = CreateFrame("Frame", "Gems_Score", Gems.frame, "ThinBorderTemp
 Gems.scoreFrame:SetSize(220,517) -- width, height
 Gems.scoreFrame:SetPoint("RIGHT", -5, -10) 
 
+-- score text
+local score_text = CreateFrame("Frame",nil,Gems.scoreFrame)
+score_text:SetWidth(1) 
+score_text:SetHeight(1) 
+score_text:SetAlpha(.90);
+score_text:SetPoint("RIGHT", -100, 100)
+score_text.text = score_text:CreateFontString(nil,"ARTWORK") 
+score_text.text:SetFont("Fonts\\ARIALN.ttf", 13, "OUTLINE")
+score_text.text:SetPoint("CENTER",0,0)
+score_text.text:SetFormattedText("Score: %d ", score)
+score_text:Hide()
+
+
 -- game frame
 Gems.gameFrame = CreateFrame("Frame", "Gems_Game", Gems.frame, "ThinBorderTemplate")
 Gems.gameFrame:SetSize(470,517) -- width, height
@@ -177,8 +191,7 @@ end
 
 
 function Gems:newGame()
-    -- reset board
-    self:clear()
+    score_text:Show()
 
     Gems:gen_icon()
     start_point = tileMap_horiz1[math.random(#tileMap_horiz1)]
@@ -189,14 +202,35 @@ function Gems:newGame()
     loop_count = 0
     
     -- todo:
-        -- game ends at very top
-        -- display score graphically
+        -- make the "end game" actually clear the board, so "start" can start a new game
         -- make "done" button actually close the game and the loop
         -- allow textures to the right and left to be x3 destroyed
-        -- increase speed every ~100 score
-        -- game ends at very top
 
     function gameLoop()
+        -- update speed
+        if score == 100 then
+            game_speed = 0.6
+        end
+        if score == 200 then
+            game_speed = 0.5
+        end
+        if score == 300 then
+            game_speed = 0.4
+        end
+        if score == 400 then
+            game_speed = 0.3
+        end
+        if score == 500 then
+            game_speed = 0.2
+        end
+        if score == 800 then
+            game_speed = 0.1
+        end
+        if score == 1000 then
+            game_speed = 0.08
+        end
+
+
         Gems.gameFrame.texture:Show()
         game_end = false
 
@@ -213,7 +247,7 @@ function Gems:newGame()
 
         if x == 1 and game_end == true then
             print("game is over!")
-            Gems.gameFrame:Hide()
+            Gems:clear()
             return -- ends loop
         end
 
@@ -255,7 +289,6 @@ function Gems:newGame()
         -- check if texture is below us
         --       before_x/y is the icon currently moving downwards
 
-        print(texture_exists[check_x][check_y], " at: ", check_x, ",", check_y)
         if texture_exists[check_x][check_y] == true then
             if texture_exists[check_x][check_y + 1] then
                 print("two textures below us")
@@ -275,15 +308,16 @@ function Gems:newGame()
                     texture_names[check_x][check_y + 1] = ""
 
 
-
-
                     score = score + 50
                     print("score is now: ", score)
+                    score_text.text:SetFormattedText("Score: %d ", score)
+                    score_text:Show()
+
 
                     x = 1
                     loop_count = loop_count+1
                     print("loop counter: ", loop_count)    
-                    C_Timer.After(0.7, gameLoop)
+                    C_Timer.After(game_speed, gameLoop)
                     return
                 else
                     print("not same three textures. continue as normal") 
@@ -293,7 +327,7 @@ function Gems:newGame()
                     print("loop counter: ", loop_count)
     
                     --if loop_count < 4 then
-                        C_Timer.After(0.7, gameLoop)
+                        C_Timer.After(game_speed, gameLoop)
                     --end
                 
                     return 
@@ -306,7 +340,7 @@ function Gems:newGame()
                 print("loop counter: ", loop_count)
 
                 --if loop_count < 4 then
-                    C_Timer.After(0.7, gameLoop)
+                    C_Timer.After(game_speed, gameLoop)
                 --end
             
                 return 
@@ -327,12 +361,12 @@ function Gems:newGame()
             print("loop counter: ", loop_count)
 
             --if loop_count < 4 then
-                C_Timer.After(0.7, gameLoop)
+                C_Timer.After(game_speed, gameLoop)
             --end
         
             return 
         else
-            C_Timer.After(0.7, gameLoop) --repeat in 1 sec
+            C_Timer.After(game_speed, gameLoop) --repeat in 1 sec
        end        
     end
 
@@ -344,25 +378,45 @@ end
 
 
 function Gems:clear()
-    Gems.gameFrame.texture:SetTexture(nil) -- needs fixing
+    Gems.gameFrame = nil
+
+    -- reset game frame
+    Gems.gameFrame = CreateFrame("Frame", "Gems_Game", Gems.frame, "ThinBorderTemplate")
+    Gems.gameFrame:SetSize(470,517) -- width, height
+    Gems.gameFrame:SetPoint("LEFT", 3, -10) 
+    Gems.gameFrame.texture = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
+
+    -- reset arrays
+    for i = 1, 12 do
+        for j = 1, 13 do
+            texture_names[i][j] = ""
+            texture_exists[i][j] = false
+            gems_textures[i][j] = nil
+        end
+    end
+
 end
 
 -- key interaction functions
 function Gems:LEFT()
     point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint()
 
-    if xOfs > 0
-    then
-        Gems.gameFrame.texture:SetPoint("TOPLEFT", xOfs - 65, yOfs)
+    if xOfs ~= nil then
+        if xOfs > 0
+        then
+            Gems.gameFrame.texture:SetPoint("TOPLEFT", xOfs - 65, yOfs)
+        end
     end
 end
 
 function Gems:RIGHT()
     point, relativeTo, relativePoint, xOfs, yOfs = Gems.gameFrame.texture:GetPoint()
 
-    if xOfs < 715
-    then
-        Gems.gameFrame.texture:SetPoint("TOPLEFT", xOfs + 65, yOfs)
+    if xOfs ~= nil then
+        if xOfs < 715
+        then
+            Gems.gameFrame.texture:SetPoint("TOPLEFT", xOfs + 65, yOfs)
+        end
     end
 end
 
