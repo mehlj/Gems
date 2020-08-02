@@ -46,6 +46,7 @@ local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hunter_BeastCall"}
 
 
+score = 0
 
 -- 2d array of texture names
 texture_names = {}
@@ -67,14 +68,17 @@ for i = 1, 12 do
     end
 end
 
+-- 2d array of texture objects
+gems_textures = {}
+for i = 1, 12 do
+    gems_textures[i] = {}
+
+    for j = 1, 13 do
+        gems_textures[i][j] = nil
+    end
+end
 
 
-
-
-
-
--- TODO------------        
--- make three of the same disappear
 
 
 -- make frame
@@ -163,6 +167,8 @@ function Gems:leave_texture(check_x, check_y)
     -- after creating texture, add records in x2 two dimensional arrays for historical record
     texture_exists[check_x][check_y] = true
     texture_names[check_x][check_y] = Gems.gameFrame.texture:GetTexture()
+    gems_textures[check_x][check_y] = bottom_tex
+
 
     --  set position
     bottom_tex:SetPoint("TOPLEFT", before_xOfs, before_yOfs)
@@ -182,10 +188,34 @@ function Gems:newGame()
     x = 1
     loop_count = 0
     
-    -- current issues:
-    -- does not remove three in a row
+    -- todo:
+        -- game ends at very top
+        -- display score graphically
+        -- make "done" button actually close the game and the loop
+        -- allow textures to the right and left to be x3 destroyed
+        -- increase speed every ~100 score
+        -- game ends at very top
 
     function gameLoop()
+        Gems.gameFrame.texture:Show()
+        game_end = false
+
+        for i = 1, 12 do        
+            for j = 1, 13 do
+                if texture_exists[i][j] ~= false then
+                    if j == 1 then
+                        game_end = true
+                        print(texture_exists[i][j], " at: ", i, ",", j)
+                    end
+                end
+            end
+        end
+
+        if x == 1 and game_end == true then
+            print("game is over!")
+            Gems.gameFrame:Hide()
+            return -- ends loop
+        end
 
         if x == 1 then
             Gems:gen_icon()
@@ -193,6 +223,10 @@ function Gems:newGame()
             Gems.gameFrame.texture:SetPoint("TOPLEFT", start_point, tileMap_vert1[1])
         end
     
+
+        if (Gems.gameFrame.texture == nil) then
+            return
+        end
         
         before_point, before_relativeTo, before_relativePoint, before_xOfs, before_yOfs = Gems.gameFrame.texture:GetPoint()
 
@@ -208,19 +242,11 @@ function Gems:newGame()
             end
         end
 
-        -- temp, just print all contents of texture_exists
+        -- temp, just print all contents of texture_names
         for i = 1, 12 do        
             for j = 1, 13 do
                 if texture_names[i][j] ~= "" then
                     print(texture_names[i][j], " at: ", i, ",", j)
-                end
-            end
-        end
-
-        -- temp, just print all contents of texture_names
-        for i = 1, 12 do        
-            for j = 1, 13 do
-                if texture_exists[i][j] == true then
                 end
             end
         end
@@ -231,21 +257,60 @@ function Gems:newGame()
 
         print(texture_exists[check_x][check_y], " at: ", check_x, ",", check_y)
         if texture_exists[check_x][check_y] == true then
-            -- if x2 below textures == your current texture, then:
-                -- remove your texture, wand the last two textures
-                -- increment score by 50
+            if texture_exists[check_x][check_y + 1] then
+                print("two textures below us")
+                if Gems.gameFrame.texture:GetTexture() == texture_names[check_x][check_y] and Gems.gameFrame.texture:GetTexture() == texture_names[check_x][check_y + 1] then
+                    print("same three textures, remove these")
+                    Gems.gameFrame.texture:Hide()
+                    gems_textures[check_x][check_y]:Hide()
+                    gems_textures[check_x][check_y + 1]:Hide()
 
-            print("texture is below us!") 
-            Gems:leave_texture(check_x, check_y - 1)
-            x = 1
-            loop_count = loop_count+1
-            print("loop counter: ", loop_count)
+                    -- remove them from the arrays as well
+                    Gems.gameFrame.texture:Hide()
+                    gems_textures[check_x][check_y] = nil
+                    texture_exists[check_x][check_y] = false
+                    texture_names[check_x][check_y] = ""
+                    gems_textures[check_x][check_y + 1] = nil
+                    texture_exists[check_x][check_y + 1] = false
+                    texture_names[check_x][check_y + 1] = ""
 
-            if loop_count < 4 then
-                C_Timer.After(0.7, gameLoop)
+
+
+
+                    score = score + 50
+                    print("score is now: ", score)
+
+                    x = 1
+                    loop_count = loop_count+1
+                    print("loop counter: ", loop_count)    
+                    C_Timer.After(0.7, gameLoop)
+                    return
+                else
+                    print("not same three textures. continue as normal") 
+                    Gems:leave_texture(check_x, check_y - 1)
+                    x = 1
+                    loop_count = loop_count+1
+                    print("loop counter: ", loop_count)
+    
+                    --if loop_count < 4 then
+                        C_Timer.After(0.7, gameLoop)
+                    --end
+                
+                    return 
+                end
+            else
+                print("texture is below us!") 
+                Gems:leave_texture(check_x, check_y - 1)
+                x = 1
+                loop_count = loop_count+1
+                print("loop counter: ", loop_count)
+
+                --if loop_count < 4 then
+                    C_Timer.After(0.7, gameLoop)
+                --end
+            
+                return 
             end
-        
-            return 
         else
             Gems.gameFrame.texture:SetPoint("TOPLEFT", before_xOfs, tileMap_vert1[x])
             x = x+1
@@ -261,9 +326,9 @@ function Gems:newGame()
             loop_count = loop_count+1
             print("loop counter: ", loop_count)
 
-            if loop_count < 4 then
+            --if loop_count < 4 then
                 C_Timer.After(0.7, gameLoop)
-            end
+            --end
         
             return 
         else
