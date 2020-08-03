@@ -43,11 +43,22 @@ local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Gouge",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hibernation",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AspectOfTheMonkey",
+                  "Interface\\AddOns\\Gems\\Media\\Ability_Rogue_Ambush",
+                  "Interface\\AddOns\\Gems\\Media\\Ability_Warrior_Charge",
+                  "Interface\\AddOns\\Gems\\Media\\Ability_Warrior_Sunder",
+                  "Interface\\AddOns\\Gems\\Media\\Spell_Frost_Frostbolt",
+                  "Interface\\AddOns\\Gems\\Media\\Spell_Holy_Resurrection",
+                  "Interface\\AddOns\\Gems\\Media\\Spell_Holy_Resurrection",
+                  "Interface\\AddOns\\Gems\\Media\\Ability_Mount_Raptor",
+                  "Interface\\AddOns\\Gems\\Media\\Ability_Racial_Cannibalize",
+                  "Interface\\AddOns\\Gems\\Media\\Ability_Rogue_Sprint",
+                  "Interface\\AddOns\\Gems\\Media\\Spell_Fire_Fireball",
                   "Interface\\AddOns\\Gems\\Media\\Ability_Hunter_BeastCall"}
 
 
 score = 0
-game_speed = 0.7
+--game_speed = 0.7 -- starting speed
+game_speed = 0.2
 
 -- 2d array of texture names
 texture_names = {}
@@ -152,6 +163,19 @@ Gems.gameFrame:SetSize(470,517) -- width, height
 Gems.gameFrame:SetPoint("LEFT", 3, -10) 
 Gems.gameFrame.texture = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
+-- game over frame
+local gameover_text = CreateFrame("Frame",nil,Gems.gameFrame)
+gameover_text:SetWidth(1) 
+gameover_text:SetHeight(1) 
+gameover_text:SetAlpha(.90);
+gameover_text:SetPoint("CENTER")
+gameover_text.text = gameover_text:CreateFontString(nil,"ARTWORK") 
+gameover_text.text:SetFont("Fonts\\ARIALN.ttf", 13, "OUTLINE")
+gameover_text.text:SetPoint("CENTER",0,0)
+gameover_text.text:SetFormattedText("Game over! Final score was:  %d", score)
+gameover_text:Hide()
+
+
 -- bottom texture
 bottom_tex = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
 
@@ -191,6 +215,7 @@ end
 
 
 function Gems:newGame()
+    gameover_text:Hide()
     score_text:Show()
 
     Gems:gen_icon()
@@ -200,30 +225,36 @@ function Gems:newGame()
     local gameLoop
     x = 1
     loop_count = 0
-    
-    -- todo:
-        -- make the "end game" actually clear the board, so "start" can start a new game
-        -- make "done" button actually close the game and the loop
+    loop_end = false
+
+    -- future todo:
         -- allow textures to the right and left to be x3 destroyed
+        -- add buffs/debuffs on completing a x3 stack
+        -- fix y=1 ending bug
 
     function gameLoop()
+
+        if loop_end == true then
+            return
+        end
+
         -- update speed
-        if score == 100 then
+        if score == 50 then
             game_speed = 0.6
         end
-        if score == 200 then
+        if score == 100 then
             game_speed = 0.5
         end
-        if score == 300 then
+        if score == 200 then
             game_speed = 0.4
         end
-        if score == 400 then
+        if score == 300 then
             game_speed = 0.3
         end
-        if score == 500 then
+        if score == 400 then
             game_speed = 0.2
         end
-        if score == 800 then
+        if score == 700 then
             game_speed = 0.1
         end
         if score == 1000 then
@@ -239,14 +270,13 @@ function Gems:newGame()
                 if texture_exists[i][j] ~= false then
                     if j == 1 then
                         game_end = true
-                        print(texture_exists[i][j], " at: ", i, ",", j)
                     end
                 end
             end
         end
 
         if x == 1 and game_end == true then
-            print("game is over!")
+            gameover_text:Show()
             Gems:clear()
             return -- ends loop
         end
@@ -257,8 +287,7 @@ function Gems:newGame()
             Gems.gameFrame.texture:SetPoint("TOPLEFT", start_point, tileMap_vert1[1])
         end
     
-
-        if (Gems.gameFrame.texture == nil) then
+        if (loop_over == true) then
             return
         end
         
@@ -276,24 +305,12 @@ function Gems:newGame()
             end
         end
 
-        -- temp, just print all contents of texture_names
-        for i = 1, 12 do        
-            for j = 1, 13 do
-                if texture_names[i][j] ~= "" then
-                    print(texture_names[i][j], " at: ", i, ",", j)
-                end
-            end
-        end
-
-
         -- check if texture is below us
-        --       before_x/y is the icon currently moving downwards
-
         if texture_exists[check_x][check_y] == true then
             if texture_exists[check_x][check_y + 1] then
-                print("two textures below us")
+                --two textures below us
                 if Gems.gameFrame.texture:GetTexture() == texture_names[check_x][check_y] and Gems.gameFrame.texture:GetTexture() == texture_names[check_x][check_y + 1] then
-                    print("same three textures, remove these")
+                    -- same three textures, remove these
                     Gems.gameFrame.texture:Hide()
                     gems_textures[check_x][check_y]:Hide()
                     gems_textures[check_x][check_y + 1]:Hide()
@@ -307,44 +324,34 @@ function Gems:newGame()
                     texture_exists[check_x][check_y + 1] = false
                     texture_names[check_x][check_y + 1] = ""
 
-
                     score = score + 50
-                    print("score is now: ", score)
                     score_text.text:SetFormattedText("Score: %d ", score)
                     score_text:Show()
 
-
                     x = 1
                     loop_count = loop_count+1
-                    print("loop counter: ", loop_count)    
                     C_Timer.After(game_speed, gameLoop)
                     return
                 else
-                    print("not same three textures. continue as normal") 
+                    --not same three textures. continue as normal
                     Gems:leave_texture(check_x, check_y - 1)
                     x = 1
                     loop_count = loop_count+1
-                    print("loop counter: ", loop_count)
     
-                    --if loop_count < 4 then
-                        C_Timer.After(game_speed, gameLoop)
-                    --end
+                    C_Timer.After(game_speed, gameLoop)
                 
                     return 
                 end
             else
-                print("texture is below us!") 
                 Gems:leave_texture(check_x, check_y - 1)
                 x = 1
                 loop_count = loop_count+1
-                print("loop counter: ", loop_count)
 
-                --if loop_count < 4 then
-                    C_Timer.After(game_speed, gameLoop)
-                --end
+                C_Timer.After(game_speed, gameLoop)
             
                 return 
             end
+
         else
             Gems.gameFrame.texture:SetPoint("TOPLEFT", before_xOfs, tileMap_vert1[x])
             x = x+1
@@ -354,15 +361,11 @@ function Gems:newGame()
 
         if after_yOfs == -792
         then
-            print("at bottom")
             Gems:leave_texture(check_x, check_y)
             x = 1
             loop_count = loop_count+1
-            print("loop counter: ", loop_count)
 
-            --if loop_count < 4 then
-                C_Timer.After(game_speed, gameLoop)
-            --end
+            C_Timer.After(game_speed, gameLoop)
         
             return 
         else
@@ -378,13 +381,17 @@ end
 
 
 function Gems:clear()
-    Gems.gameFrame = nil
-
-    -- reset game frame
-    Gems.gameFrame = CreateFrame("Frame", "Gems_Game", Gems.frame, "ThinBorderTemplate")
-    Gems.gameFrame:SetSize(470,517) -- width, height
-    Gems.gameFrame:SetPoint("LEFT", 3, -10) 
-    Gems.gameFrame.texture = Gems.gameFrame:CreateTexture(nil, "BACKGROUND")
+    -- clear gameFrame of all textures
+    for i,x in ipairs(tileMap_horiz1) do 
+        for b,y in ipairs(tileMap_vert1) do
+            -- if a texture exists there
+            if texture_exists[i][b] ~= false then
+                Gems.gameFrame.texture:Hide()
+                bottom_tex:Hide()
+                gems_textures[i][b]:Hide()          
+            end
+        end
+    end
 
     -- reset arrays
     for i = 1, 12 do
@@ -394,6 +401,8 @@ function Gems:clear()
             gems_textures[i][j] = nil
         end
     end
+
+    loop_end = true
 
 end
 
@@ -427,3 +436,5 @@ function SlashCmdList.GEMS(msg, editBox)
     GemsDB.scoreMax = GemsDB.scoreMax or 0
     Gems.frame:Show()
 end
+
+--Gems:clear()
