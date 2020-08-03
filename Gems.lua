@@ -57,8 +57,7 @@ local textures = {"Interface\\AddOns\\Gems\\Media\\Ability_Hunter_AimedShot",
 
 
 score = 0
---game_speed = 0.7 -- starting speed
-game_speed = 0.2
+game_speed = 0.7 -- starting speed
 
 -- 2d array of texture names
 texture_names = {}
